@@ -3,4 +3,4 @@
 	url = https://github.com/nvzqz/FileKit
 [submodule "Generator/Dependencies/SourceKitten"]
 	path = Generator/Dependencies/SourceKitten
-	url = https://github.com/jpsim/SourceKitten
+	url = https://github.com/Monnoroch/SourceKitten
