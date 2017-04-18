@@ -23,7 +23,7 @@ class MockA: A, Cuckoo.Mock {
     typealias MocksType = A
     typealias Stubbing = __StubbingProxy_A
     typealias Verification = __VerificationProxy_A
-    let cuckoo_manager = Cuckoo.MockManager()
+    let manager = Cuckoo.MockManager()
     
     private var observed: A?
     
@@ -33,20 +33,20 @@ class MockA: A, Cuckoo.Mock {
     }
     
     struct __StubbingProxy_A: Cuckoo.StubbingProxy {
-        private let cuckoo_manager: Cuckoo.MockManager
+        private let manager: Cuckoo.MockManager
         
         init(manager: Cuckoo.MockManager) {
-            self.manager = cuckoo_manager
+            self.manager = manager
         }
     }
     
     struct __VerificationProxy_A: Cuckoo.VerificationProxy {
-        private let cuckoo_manager: Cuckoo.MockManager
+        private let manager: Cuckoo.MockManager
         private let callMatcher: Cuckoo.CallMatcher
         private let sourceLocation: Cuckoo.SourceLocation
         
         init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
-            self.manager = cuckoo_manager
+            self.manager = manager
             self.callMatcher = callMatcher
             self.sourceLocation = sourceLocation
         }

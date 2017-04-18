@@ -30,32 +30,19 @@ public struct Tokenizer {
     private func tokenize(_ representables: [SourceKitRepresentable]) -> [Token] {
         return representables.flatMap(tokenize)
     }
-
-    internal static let nameNotSet = "name not set"
-    internal static let unknownType = "unknown type"
+    
     private func tokenize(_ representable: SourceKitRepresentable) -> Token? {
         guard let dictionary = representable as? [String: SourceKitRepresentable] else { return nil }
         
         // Common fields
-        let name = dictionary[Key.Name.rawValue] as? String ?? Tokenizer.nameNotSet
-        let kind = dictionary[Key.Kind.rawValue] as? String ?? Tokenizer.unknownType
-
-        // Inheritance
-        let inheritedTypes = dictionary[Key.InheritedTypes.rawValue] as? [SourceKitRepresentable] ?? []
-        let tokenizedInheritedTypes = inheritedTypes.flatMap { type -> InheritanceDeclaration in
-            guard let typeDict = type as? [String: SourceKitRepresentable] else {
-                return InheritanceDeclaration.empty
-            }
-            let name = typeDict[Key.Name.rawValue] as? String ?? Tokenizer.nameNotSet
-            return InheritanceDeclaration(name: name)
-        }
-
+        let name = dictionary[Key.Name.rawValue] as? String ?? "name not set"
+        let kind = dictionary[Key.Kind.rawValue] as? String ?? "unknown type"
+        
         // Optional fields
         let range = extractRange(from: dictionary, offset: .Offset, length: .Length)
         let nameRange = extractRange(from: dictionary, offset: .NameOffset, length: .NameLength)
         let bodyRange = extractRange(from: dictionary, offset: .BodyOffset, length: .BodyLength)
         
-        let attributeOprional = (dictionary["key.attributes"] as? [Any])?.first(where: {($0 as? [String : String])?["key.attribute"] == "source.decl.attribute.optional"}) != nil
         let accessibility = (dictionary[Key.Accessibility.rawValue] as? String).flatMap { Accessibility(rawValue: $0) }
         let type = dictionary[Key.TypeName.rawValue] as? String
         
@@ -72,9 +59,8 @@ public struct Tokenizer {
                 nameRange: nameRange!,
                 bodyRange: bodyRange!,
                 initializers: initializers,
-                children: children,
-                inheritedTypes: tokenizedInheritedTypes)
-
+                children: children)
+            
         case Kinds.ClassDeclaration.rawValue:
             let subtokens = tokenize(dictionary[Key.Substructure.rawValue] as? [SourceKitRepresentable] ?? [])
             let initializers = subtokens.only(Initializer.self)
@@ -94,9 +80,8 @@ public struct Tokenizer {
                 nameRange: nameRange!,
                 bodyRange: bodyRange!,
                 initializers: initializers,
-                children: children,
-                inheritedTypes: tokenizedInheritedTypes)
-
+                children: children)
+            
         case Kinds.ExtensionDeclaration.rawValue:
             return ExtensionDeclaration(range: range!)
             
@@ -107,13 +92,9 @@ public struct Tokenizer {
                 return nil
             }
             
-            if type == nil {
-                stderrPrint("Type of instance variable \(name) could not be inferred. Please specify it explicitly. (\(file.path ?? ""))")
-            }
-            
             return InstanceVariable(
                 name: name,
-                type: type ?? "__UnknownType",
+                type: type!,
                 accessibility: accessibility!,
                 setterAccessibility: setterAccessibility,
                 range: range!,
@@ -156,15 +137,17 @@ public struct Tokenizer {
                     name: name,
                     accessibility: accessibility!,
                     returnSignature: returnSignature,
-                    isOptional: attributeOprional,
                     range: range!,
                     nameRange: nameRange!,
                     parameters: parameters)
             }
 
+        case Kinds.Mark.rawValue:
+            // Do not log warning
+            return nil
+            
         default:
-            // Do not log anything, until the parser contains all known cases.
-            // stderrPrint("Unknown kind. Dictionary: \(dictionary) \(file.path ?? "")")
+            fputs("Unknown kind: \(kind)", stderr)
             return nil
         }
     }
@@ -172,19 +155,9 @@ public struct Tokenizer {
     private func tokenize(methodName: String, parameters: [SourceKitRepresentable]) -> [MethodParameter] {
         // Takes the string between `(` and `)`
         let parameterNames = methodName.components(separatedBy: "(").last?.characters.dropLast(1).map { "\($0)" }.joined(separator: "")
-        var parameterLabels: [String?] = parameterNames?.components(separatedBy: ":").map { $0 != "_" ? $0 : nil } ?? []
-
-        // Last element is not type.
-        parameterLabels = Array(parameterLabels.dropLast())
-
-        // Substructure can contain some other informations after the parameters.
-        let filteredParameters = parameters.filter({
-            let dictionary = $0 as? [String: SourceKitRepresentable]
-            let kind = dictionary?[Key.Kind.rawValue] as? String ?? ""
-            return kind == Kinds.MethodParameter.rawValue
-        })
-
-        return zip(parameterLabels, filteredParameters).flatMap(tokenize)
+        let parameterLabels: [String?] = parameterNames?.components(separatedBy: ":").map { $0 != "_" ? $0 : nil } ?? []
+        
+        return zip(parameterLabels, parameters).flatMap(tokenize)
     }
     
     private func tokenize(parameterLabel: String?, parameter: SourceKitRepresentable) -> MethodParameter? {
@@ -201,7 +174,7 @@ public struct Tokenizer {
             return MethodParameter(label: parameterLabel, name: name, type: type!, range: range!, nameRange: nameRange!)
             
         default:
-            stderrPrint("Unknown method parameter. Dictionary: \(dictionary) \(file.path ?? "")")
+            fputs("Unknown method parameter kind: \(kind)", stderr)
             return nil
         }
     }

@@ -24,10 +24,6 @@ public extension Method {
         return rawName == "init"
     }
     
-    var isDeinit: Bool {
-        return rawName == "deinit"
-    }
-    
     var fullyQualifiedName: String {
         let parameterTypes = parameters.map { $0.type }
         let nameParts = name.components(separatedBy: ":")
@@ -48,10 +44,5 @@ public extension Method {
         } else {
             return "Void"
         }
-    }
-
-    public func isEqual(to other: Token) -> Bool {
-        guard let other = other as? Method else { return false }
-        return self.name == other.name
     }
 }

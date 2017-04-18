@@ -19,11 +19,19 @@ public class MockManager {
         
     }
 
-    fileprivate func callInternal<IN, OUT>(_ method: String, parameters: IN, original: ((IN) -> OUT)? = nil) -> OUT {
-        return try! callThrowsInternal(method, parameters: parameters, original: original)
+    public func getter<T>(_ property: String, original: ((Void) -> T)? = nil) -> T {
+        return call(getterName(property), parameters: Void(), original: original)
     }
     
-    fileprivate func callThrowsInternal<IN, OUT>(_ method: String, parameters: IN, original: ((IN) throws -> OUT)? = nil) throws -> OUT {
+    public func setter<T>(_ property: String, value: T, original: ((T) -> Void)? = nil) {
+        return call(setterName(property), parameters: value, original: original)
+    }
+    
+    public func call<IN, OUT>(_ method: String, parameters: IN, original: ((IN) -> OUT)? = nil) -> OUT {
+        return try! callThrows(method, parameters: parameters, original: original)
+    }
+    
+    public func callThrows<IN, OUT>(_ method: String, parameters: IN, original: ((IN) throws -> OUT)? = nil) throws -> OUT {
         let stubCall = ConcreteStubCall(method: method, parameters: parameters)
         stubCalls.append(stubCall)
         unverifiedStubCallsIndexes.append(stubCalls.count - 1)
@@ -118,109 +126,6 @@ public class MockManager {
     
     private func failAndCrash(_ message: String, file: StaticString = #file, line: UInt = #line) -> Never  {
         MockManager.fail(message, (file, line))
-
-        #if _runtime(_ObjC)
-            NSException(name: .internalInconsistencyException, reason:message, userInfo: nil).raise()
-        #endif
-
         fatalError(message)
     }
 }
-
-extension MockManager {
-    public func getter<T>(_ property: String, original: ((Void) -> T)? = nil) -> T {
-        return call(getterName(property), parameters: Void(), original: original)
-    }
-
-    public func setter<T>(_ property: String, value: T, original: ((T) -> Void)? = nil) {
-        return call(setterName(property), parameters: value, original: original)
-    }
-
-}
-
-// DSL helpers workarounding Swift 3's removal of parameter splat
-extension MockManager {
-    public func call<IN, OUT>(_ method: String, parameters: IN, original: ((IN) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, OUT>(_ method: String, parameters: (IN1, IN2), original: ((IN1, IN2) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, OUT>(_ method: String, parameters: (IN1, IN2, IN3), original: ((IN1, IN2, IN3) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, IN4, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4), original: ((IN1, IN2, IN3, IN4) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, IN4, IN5, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5), original: ((IN1, IN2, IN3, IN4, IN5) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, IN4, IN5, IN6, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6), original: ((IN1, IN2, IN3, IN4, IN5, IN6) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, IN4, IN5, IN6, IN7, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6, IN7), original: ((IN1, IN2, IN3, IN4, IN5, IN6, IN7) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-
-    public func call<IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8), original: ((IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8) -> OUT)? = nil) -> OUT {
-        return callInternal(method, parameters: parameters, original: original)
-    }
-}
-
-extension MockManager {
-    public func callThrows<IN, OUT>(_ method: String, parameters: IN, original: ((IN) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, OUT>(_ method: String, parameters: (IN1, IN2), original: ((IN1, IN2) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, OUT>(_ method: String, parameters: (IN1, IN2, IN3), original: ((IN1, IN2, IN3) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, IN4, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4), original: ((IN1, IN2, IN3, IN4) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, IN4, IN5, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5), original: ((IN1, IN2, IN3, IN4, IN5) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, IN4, IN5, IN6, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6), original: ((IN1, IN2, IN3, IN4, IN5, IN6) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, IN4, IN5, IN6, IN7, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6, IN7), original: ((IN1, IN2, IN3, IN4, IN5, IN6, IN7) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-
-    public func callThrows<IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8, OUT>(_ method: String, parameters: (IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8), original: ((IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8) throws -> OUT)? = nil) throws -> OUT {
-        return try callThrowsInternal(method, parameters: parameters, original: original)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

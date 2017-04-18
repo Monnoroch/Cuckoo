@@ -24,9 +24,4 @@ public struct MethodParameter: Token {
     public var typeWithoutAttributes: String {
         return type.replacingOccurrences(of: "@escaping", with: "").replacingOccurrences(of: "@autoclosure", with: "").trimmed
     }
-
-    public func isEqual(to other: Token) -> Bool {
-        guard let other = other as? MethodParameter else { return false }
-        return self.name == other.name
-    }
 }

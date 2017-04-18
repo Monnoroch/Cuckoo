@@ -15,5 +15,4 @@ public protocol ContainerToken: Token {
     var initializers: [Initializer] { get }
     var children: [Token] { get }
     var implementation: Bool { get }
-    var inheritedTypes: [InheritanceDeclaration] { get }
 }
